@@ -39,11 +39,27 @@ class _JournalCard extends State<JournalCard> {
               ),
               child: ListTile(
                 tileColor: Colors.transparent,
-                title: Text(
-                  viewModel.title.isNotEmpty ? viewModel.title : 'No title',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
+                title: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Wrap(
+                        spacing: 4.0,
+                        runSpacing: 4.0,
+                        children: viewModel.tags
+                            .map((tag) => Chip(
+                                  backgroundColor: JournalColors.entry.value,
+                                  label: Text(tag),
+                                ))
+                            .toList(),
+                      ),
+                      Text(
+                        viewModel.title.isNotEmpty
+                            ? viewModel.title
+                            : 'No title',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ]),
                 subtitle: Text(
                     '${viewModel.timeStamp} - ${viewModel.emotionalLevelAsIcon} ${viewModel.text}'),
                 onTap: () => Navigator.of(context)

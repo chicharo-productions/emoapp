@@ -143,9 +143,14 @@ class Sdb<T extends JsonSerializableInterface<T>> {
         // Web: use in-memory storage
         _memoryStore[_storageKey]?[key] = jsonData;
       } else {
-        // Native: write to file
+        // Native: write to both JSON and YAML files
         final file = await _getEntityFile(key);
         await file.writeAsString(jsonEncode(jsonData));
+
+        // Also write YAML file
+        final dir = await _getEntityDirectory();
+        final yamlFile = File('${dir.path}/$key.yaml');
+        await yamlFile.writeAsString(_mapToYaml(jsonData));
       }
     } catch (_) {}
   }
@@ -160,10 +165,16 @@ class Sdb<T extends JsonSerializableInterface<T>> {
         // Web: use in-memory storage
         _memoryStore[_storageKey]?.remove(key);
       } else {
-        // Native: delete file
+        // Native: delete both JSON and YAML files
         final file = await _getEntityFile(key);
         if (await file.exists()) {
           await file.delete();
+        }
+
+        final dir = await _getEntityDirectory();
+        final yamlFile = File('${dir.path}/$key.yaml');
+        if (await yamlFile.exists()) {
+          await yamlFile.delete();
         }
       }
     } catch (_) {}
@@ -187,7 +198,8 @@ class Sdb<T extends JsonSerializableInterface<T>> {
         if (await dir.exists()) {
           final files = dir.listSync();
           for (final file in files) {
-            if (file is File && file.path.endsWith('.json')) {
+            if (file is File &&
+                (file.path.endsWith('.json') || file.path.endsWith('.yaml'))) {
               await file.delete();
               count++;
             }
