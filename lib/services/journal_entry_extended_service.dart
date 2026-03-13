@@ -7,7 +7,7 @@
 // import 'package:emoapp/model/profile.dart';
 // import 'package:emoapp/services/hive_entity_service.dart';
 import 'package:emoapp/model/journal_entry_extended.dart';
-import 'package:emoapp/services/sqf_entity_service.dart';
+import 'package:emoapp/services/flat_file_service.dart';
 
 class JournalEntryExtendedService
     extends FlatFileEntityService<JournalEntryExtended> {

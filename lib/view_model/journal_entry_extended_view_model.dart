@@ -3,7 +3,7 @@ import 'package:emoapp/model/journal_type.dart';
 import 'package:emoapp/model/topic.dart';
 import 'package:emoapp/services/journal_entry_extended_service.dart';
 import 'package:emoapp/services/service_locator.dart';
-import 'package:emoapp/services/sqf_entity_service.dart';
+import 'package:emoapp/services/flat_file_service.dart';
 
 import 'package:flutter/widgets.dart';
 import 'package:get_it/get_it.dart';

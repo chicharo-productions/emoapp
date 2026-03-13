@@ -8,7 +8,7 @@ import 'package:emoapp/model/journal_type.dart';
 import 'package:emoapp/model/topic.dart';
 import 'package:emoapp/services/journal_entry_extended_service.dart';
 import 'package:emoapp/services/sdb.dart';
-import 'package:emoapp/services/sqf_entity_service.dart';
+import 'package:emoapp/services/flat_file_service.dart';
 import 'package:get_it/get_it.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -239,7 +239,8 @@ class ServiceLocatorRegistrar {
       'topic-box',
     );
 
-    final topic = GetIt.instance.registerSingleton<FlatFileEntityService<Topic>>(
+    final topic =
+        GetIt.instance.registerSingleton<FlatFileEntityService<Topic>>(
       FlatFileEntityService<Topic>(topicValidation, Sdb<Topic>()),
     );
 

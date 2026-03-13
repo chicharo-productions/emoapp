@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:emoapp/model/topic.dart';
-import 'package:emoapp/services/sqf_entity_service.dart';
+import 'package:emoapp/services/flat_file_service.dart';
 import 'package:flutter/widgets.dart';
 import 'package:get_it/get_it.dart';
 
@@ -19,8 +19,9 @@ class TopicListViewModel extends ChangeNotifier {
     if (predicate == null) {
       _cachedTopics = (await service.getAll()).toList();
     } else {
-      _cachedTopics =
-          (await service.getAll()).where((element) => predicate(element)).toList();
+      _cachedTopics = (await service.getAll())
+          .where((element) => predicate(element))
+          .toList();
     }
     // Sort by updatedAt descending (newest first)
     _cachedTopics.sort((a, b) => b.updatedAt.compareTo(a.updatedAt));

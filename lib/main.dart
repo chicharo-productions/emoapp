@@ -4,7 +4,7 @@ import 'package:emoapp/model/journal_entry_extended.dart';
 import 'package:emoapp/model/journal_type.dart';
 import 'package:emoapp/services/journal_entry_extended_service.dart';
 import 'package:emoapp/services/service_locator.dart';
-import 'package:emoapp/services/sqf_entity_service.dart';
+import 'package:emoapp/services/flat_file_service.dart';
 import 'package:emoapp/widgets/dashboard.dart';
 import 'package:emoapp/widgets/discussion_lobby.dart';
 import 'package:emoapp/widgets/journal_calendar.dart';

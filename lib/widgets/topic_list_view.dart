@@ -1,5 +1,5 @@
 import 'package:emoapp/model/topic.dart';
-import 'package:emoapp/services/sqf_entity_service.dart';
+import 'package:emoapp/services/flat_file_service.dart';
 import 'package:emoapp/view_model/topic_list_view_model.dart';
 import 'package:emoapp/widgets/topic_detail_view.dart';
 import 'package:flutter/material.dart';

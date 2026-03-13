@@ -1,6 +1,6 @@
 import 'package:emoapp/model/discussion/discussion.dart';
 import 'package:emoapp/model/journal_colors.dart';
-import 'package:emoapp/services/sqf_entity_service.dart';
+import 'package:emoapp/services/flat_file_service.dart';
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 import 'package:get_it/get_it.dart';
