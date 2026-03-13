@@ -1,6 +1,7 @@
 import 'package:emoapp/model/journal_colors.dart';
 import 'package:emoapp/model/journal_entry_extended.dart';
 import 'package:emoapp/model/journal_type.dart';
+import 'package:emoapp/model/topic.dart';
 import 'package:emoapp/services/calendar/day_creator_service.dart';
 import 'package:emoapp/view_model/journal_entry_extended_view_model.dart';
 // import 'package:emojis_null_safe/emojis.dart';
@@ -21,16 +22,21 @@ class JournalEditCard extends StatefulWidget {
 
 class _JournalEditCard extends State<JournalEditCard> {
   final TextEditingController _controller = TextEditingController();
+  final TextEditingController _titleController = TextEditingController();
+  final TextEditingController _tagController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     _controller.text = widget.journalEntry.text;
+    _titleController.text = widget.journalEntry.title;
   }
 
   @override
   void dispose() {
     _controller.dispose();
+    _titleController.dispose();
+    _tagController.dispose();
     super.dispose();
   }
 
@@ -44,6 +50,16 @@ class _JournalEditCard extends State<JournalEditCard> {
               // Here we take the value from the MyHomePage object that was created by
               // the App.build method, and use it to set our appbar title.
               title: const Text(''), //widget.journalEntry.id),
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.save),
+                  onPressed: () async {
+                    await viewModel.save().then(
+                          (value) => Navigator.of(context).pop(),
+                        );
+                  },
+                ),
+              ],
             ),
             body: SingleChildScrollView(
               child: Padding(
@@ -53,21 +69,21 @@ class _JournalEditCard extends State<JournalEditCard> {
                     const SizedBox(height: 10),
                     const Text('Type'),
                     DropdownButton(
-                      value: viewModel.type,
+                      value: viewModel.rawType,
                       items: [
-                        JournalType.entry.stringRepresentation,
-                        JournalType.perspective.stringRepresentation,
-                        JournalType.retrospective.stringRepresentation,
+                        JournalType.entry,
+                        JournalType.perspective,
+                        JournalType.retrospective,
                       ]
                           .map(
                             (e) => DropdownMenuItem(
                               value: e,
-                              child: Text(e),
+                              child: Text(e.stringRepresentation),
                             ),
                           )
                           .toList(),
                       onChanged: (value) => viewModel.type =
-                          value?.toString() ??
+                          value?.stringRepresentation ??
                               JournalType.entry.stringRepresentation,
                     ),
                     const SizedBox(height: 10),
@@ -85,12 +101,14 @@ class _JournalEditCard extends State<JournalEditCard> {
                             text: viewModel.timeStamp,
                             recognizer: TapGestureRecognizer()
                               ..onTap = () async {
-                                if (viewModel.type != JournalType.entry) {
-                                  var validDate = DateTime.now();
-                                  try {
-                                    validDate =
-                                        DateFormat().parse(viewModel.timeStamp);
-                                  } catch (ex) {}
+                                if (viewModel.type !=
+                                    JournalType.entry.stringRepresentation) {
+                                  var validDate =
+                                      viewModel.timeStampAsDateTime();
+                                  // try {
+                                  //   validDate =
+                                  //       DateFormat().parse(viewModel);
+                                  // } catch (ex) {}
                                   final days = DayCreatorService.getDays(
                                     validDate.month,
                                     validDate.year,
@@ -186,6 +204,103 @@ class _JournalEditCard extends State<JournalEditCard> {
                     //     ]),
                     const SizedBox(height: 10),
 
+                    // Title field
+                    const Text('Title (Optional)'),
+                    TextField(
+                      controller: _titleController,
+                      decoration: const InputDecoration(
+                        labelText: 'Journal Entry Title',
+                        border: OutlineInputBorder(),
+                      ),
+                      onChanged: (value) {
+                        viewModel.title = value;
+                      },
+                    ),
+                    const SizedBox(height: 10),
+
+                    // Tags section
+                    const Text('Tags (Optional)'),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: _tagController,
+                            decoration: const InputDecoration(
+                              labelText: 'Add a tag',
+                              border: OutlineInputBorder(),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        ElevatedButton(
+                          onPressed: () {
+                            final tag = _tagController.text.trim();
+                            if (tag.isNotEmpty) {
+                              viewModel.addTag(tag);
+                              _tagController.clear();
+                              setState(() {});
+                            }
+                          },
+                          child: const Icon(Icons.add),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: viewModel.tags.map((tag) {
+                        return Chip(
+                          label: Text(tag),
+                          onDeleted: () {
+                            viewModel.removeTag(tag);
+                            setState(() {});
+                          },
+                        );
+                      }).toList(),
+                    ),
+                    const SizedBox(height: 10),
+
+                    // Topic selector
+                    const Text('Topic (Optional)'),
+                    Consumer<JournalEntryExtendedViewModel>(
+                      builder: (context, viewModel, child) {
+                        return FutureBuilder<List<Topic>>(
+                          future: viewModel.getAvailableTopics(),
+                          builder: (context, snapshot) {
+                            if (!snapshot.hasData) {
+                              return const CircularProgressIndicator();
+                            }
+                            final topics = snapshot.data ?? [];
+                            final selectedTopicExists = topics.any(
+                              (topic) => topic.id == viewModel.topicId,
+                            );
+
+                            return DropdownButton<Topic>(
+                              value: selectedTopicExists
+                                  ? topics.firstWhere(
+                                      (topic) => topic.id == viewModel.topicId,
+                                      orElse: () => Topic.emptyTopic(),
+                                    )
+                                  : null,
+                              hint: const Text('Select a topic'),
+                              items: topics.map((topic) {
+                                return DropdownMenuItem<Topic>(
+                                  value: topic,
+                                  child: Text(topic.title),
+                                );
+                              }).toList(),
+                              onChanged: (value) {
+                                if (value == null) return;
+                                viewModel.topicId = value.id;
+                              },
+                            );
+                          },
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 10),
+
                     // HashTagTextField(
                     TextField(
                       maxLines: 30,
@@ -207,23 +322,6 @@ class _JournalEditCard extends State<JournalEditCard> {
                     ),
                   ],
                 ),
-              ),
-            ),
-            bottomNavigationBar: ElevatedButton(
-              key: UniqueKey(),
-              // heroTag: 'save_journal',
-              child: const Icon(
-                Icons.save,
-                size: 32,
-              ),
-              onPressed: () async => Future.sync(() {
-                // viewModel.hashtags =
-                //     extractHashTags(viewModel.text).toList();
-              })
-                  .then(
-                (value) async => await viewModel.save().then(
-                      (value) => Navigator.of(context).pop(),
-                    ),
               ),
             ),
           ),

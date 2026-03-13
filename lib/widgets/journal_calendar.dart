@@ -134,8 +134,10 @@ class _JournalCalendar extends State<JournalCalendar> {
             // width: 24,
             // height: 24,
             child: Center(
-                child: Text(
-                    '$perspectiveCount ${pluralizeWordIf('perspective', perspectiveCount)}',),),
+              child: Text(
+                '$perspectiveCount ${pluralizeWordIf('perspective', perspectiveCount)}',
+              ),
+            ),
           );
         }
         break;
@@ -160,8 +162,10 @@ class _JournalCalendar extends State<JournalCalendar> {
             // width: 24,
             // height: 24,
             child: Center(
-                child: Text(
-                    '$retrospectiveCount ${pluralizeWordIf('retrospective', retrospectiveCount)}',),),
+              child: Text(
+                '$retrospectiveCount ${pluralizeWordIf('retrospective', retrospectiveCount)}',
+              ),
+            ),
           );
         }
         break;
@@ -177,7 +181,7 @@ class _JournalCalendar extends State<JournalCalendar> {
   ) {
     switch (journalType) {
       case JournalType.entry:
-        final journalEntriesCount = entries
+        final filteredEntries = entries
             .where(
               (j) =>
                   j.type == JournalType.entry.index &&
@@ -185,27 +189,36 @@ class _JournalCalendar extends State<JournalCalendar> {
                   j.timeStamp.month == currentDate.month &&
                   j.timeStamp.year == currentDate.year,
             )
-            .length;
-        if (journalEntriesCount > 0) {
+            .toList();
+        if (filteredEntries.isNotEmpty) {
           return DecoratedBox(
-            // width: 24,
-            // height: 24,
             decoration: const BoxDecoration(
               color: entryColor,
             ),
-            // width: 24,
-            // height: 24,
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                '$journalEntriesCount ${singularOrPluralIf('entry', 'entries', journalEntriesCount)}',
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: filteredEntries
+                    .map((entry) => Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                          child: Chip(
+                            label: Text(
+                              entry.title.isEmpty ? '(no title)' : entry.title,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(fontSize: 12),
+                            ),
+                            visualDensity: VisualDensity.compact,
+                          ),
+                        ))
+                    .toList(),
               ),
             ),
           );
         }
         break;
       case JournalType.perspective:
-        final perspectiveCount = entries
+        final filteredEntries = entries
             .where(
               (j) =>
                   j.type == JournalType.perspective.index &&
@@ -213,25 +226,36 @@ class _JournalCalendar extends State<JournalCalendar> {
                   j.timeStamp.month == currentDate.month &&
                   j.timeStamp.year == currentDate.year,
             )
-            .length;
-        if (perspectiveCount > 0) {
+            .toList();
+        if (filteredEntries.isNotEmpty) {
           return DecoratedBox(
-            // width: 24,
-            // height: 24,
             decoration: const BoxDecoration(
               color: perspectiveColor,
             ),
-            // width: 24,
-            // height: 24,
-            child: Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                    '$perspectiveCount ${pluralizeWordIf('perspective', perspectiveCount)}',),),
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: filteredEntries
+                    .map((entry) => Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                          child: Chip(
+                            label: Text(
+                              entry.title.isEmpty ? '(no title)' : entry.title,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(fontSize: 12),
+                            ),
+                            visualDensity: VisualDensity.compact,
+                          ),
+                        ))
+                    .toList(),
+              ),
+            ),
           );
         }
         break;
       case JournalType.retrospective:
-        final retrospectiveCount = entries
+        final filteredEntries = entries
             .where(
               (j) =>
                   j.type == JournalType.retrospective.index &&
@@ -239,20 +263,31 @@ class _JournalCalendar extends State<JournalCalendar> {
                   j.timeStamp.month == currentDate.month &&
                   j.timeStamp.year == currentDate.year,
             )
-            .length;
-        if (retrospectiveCount > 0) {
+            .toList();
+        if (filteredEntries.isNotEmpty) {
           return DecoratedBox(
-            // width: 24,
-            // height: 24,
             decoration: const BoxDecoration(
               color: retrospectiveColor,
             ),
-            // width: 24,
-            // height: 24,
-            child: Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                    '$retrospectiveCount ${pluralizeWordIf('retrospective', retrospectiveCount)}',),),
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: filteredEntries
+                    .map((entry) => Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                          child: Chip(
+                            label: Text(
+                              entry.title.isEmpty ? '(no title)' : entry.title,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(fontSize: 12),
+                            ),
+                            visualDensity: VisualDensity.compact,
+                          ),
+                        ))
+                    .toList(),
+              ),
+            ),
           );
         }
         break;

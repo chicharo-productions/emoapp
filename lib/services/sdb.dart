@@ -1,117 +1,202 @@
 import 'dart:convert';
 import 'dart:io';
-
+import 'package:flutter/foundation.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:emoapp/model/json_serializable_interface.dart';
 import 'package:get_it/get_it.dart';
-import 'package:path_provider/path_provider.dart';
 
 /// Stupid database
-/// stores everything as files
-/// in a folder "sdb" in your documents
+/// Stores everything as files on native platforms (in-memory on web)
 class Sdb<T extends JsonSerializableInterface<T>> {
-  Directory? _tableDir;
+  // In-memory storage for web and fallback
+  static final Map<String, Map<String, dynamic>> _memoryStore = {};
+
   bool _opened = false;
+  late String _storageKey;
+  late String _entityType;
 
   Future<void> openBox() async {
     if (_opened) return;
-    final rootDir = Directory((await getApplicationDocumentsDirectory()).path);
-    final rootDbPath = "${rootDir.path}/sdb";
-    final sdbDir = Directory(rootDbPath);
-    //nice lets move on
-    if (!sdbDir.existsSync()) {
-      sdbDir.createSync();
+    _entityType = T.toString();
+    _storageKey = 'sdb_$_entityType';
+
+    if (!kIsWeb) {
+      // Create directory for native platforms
+      try {
+        await _getEntityDirectory();
+      } catch (e) {
+        print('Failed to create directory: $e');
+      }
+    } else {
+      // Initialize memory store for web
+      _memoryStore.putIfAbsent(_storageKey, () => {});
     }
-    final tablePath = "${rootDir.path}/sdb/${T.toString()}";
-    final dTableDir = Directory(tablePath);
-    if (!dTableDir.existsSync()) {
-      dTableDir.createSync();
-    }
-    _tableDir = dTableDir;
-    _opened = dTableDir.existsSync();
+    _opened = true;
   }
 
-  Future<bool> boxExists() async {
-    final rootDir = Directory((await getApplicationDocumentsDirectory()).path);
-    final rootDbPath = "${rootDir.path}/sdb";
-    final sdbDir = Directory(rootDbPath);
-    //nice lets move on
-    if (!sdbDir.existsSync()) {
-      sdbDir.createSync();
+  Future<bool> boxExists() async => _opened;
+
+  Future<Directory> _getEntityDirectory() async {
+    final appDir = await getApplicationDocumentsDirectory();
+    final entityDir = Directory('${appDir.path}/$_entityType');
+    if (!await entityDir.exists()) {
+      await entityDir.create(recursive: true);
     }
-    final tablePath = "${rootDir.path}/sdb/${T.runtimeType.toString()}";
-    final dTableDir = Directory(tablePath);
-    return !dTableDir.existsSync();
+    return entityDir;
+  }
+
+  Future<File> _getEntityFile(String key) async {
+    final dir = await _getEntityDirectory();
+    return File('${dir.path}/$key.json');
   }
 
   Future<T?> get(String key) async {
     if (!_opened) {
       throw Exception('Database ${T.runtimeType.toString()} not opened');
     }
-    // final f = File("${_tableDir!.path}/${key}");
-    // f.writeAsStringSync(jsonEncode(entity.toJson()), mode: FileMode.write);
-    final fpath = _tableDir!
-        .listSync()
-        .where((fse) => fse.uri.pathSegments.last == key)
-        .firstOrNull
-        ?.path;
-    if (fpath == null) {
+
+    try {
+      Map<String, dynamic>? data;
+
+      if (kIsWeb) {
+        // Web: use in-memory storage
+        data = _memoryStore[_storageKey]?[key];
+      } else {
+        // Native: read from file
+        final file = await _getEntityFile(key);
+        if (await file.exists()) {
+          final content = await file.readAsString();
+          data = jsonDecode(content) as Map<String, dynamic>;
+        }
+      }
+
+      if (data == null) return null;
+
+      return GetIt.instance.get<T>(
+        instanceName: "${T.toString()}Json",
+        param1: data,
+        param2: null,
+      );
+    } catch (e) {
       return null;
     }
-    final f = File(fpath);
-    if (!f.existsSync()) Exception('Key $key not found');
-    return GetIt.instance.get<T>(
-        instanceName: "${T.toString()}Json",
-        param1: jsonDecode(utf8.decode(f.readAsBytesSync())),
-        param2: null);
   }
 
   Future<Map<String, T>> getAll() async {
     if (!_opened) {
       throw Exception('Database ${T.runtimeType.toString()} not opened');
     }
-    // final f = File("${_tableDir!.path}/${key}");
-    // f.writeAsStringSync(jsonEncode(entity.toJson()), mode: FileMode.write);
-    return Map.fromEntries(_tableDir!.listSync().map((fse) {
-      final f = File("${fse.path}");
-      return MapEntry(
-          fse.path,
-          GetIt.instance.get(
+
+    try {
+      final result = <String, T>{};
+
+      if (kIsWeb) {
+        // Web: use in-memory storage
+        final store = _memoryStore[_storageKey] ?? {};
+        for (final entry in store.entries) {
+          try {
+            result[entry.key] = GetIt.instance.get<T>(
               instanceName: "${T.toString()}Json",
-              param1: jsonDecode(utf8.decode(f.readAsBytesSync()))));
-    }));
+              param1: entry.value,
+              param2: null,
+            );
+          } catch (_) {}
+        }
+      } else {
+        // Native: read from all files in directory
+        final dir = await _getEntityDirectory();
+        if (await dir.exists()) {
+          final files = dir.listSync();
+          for (final file in files) {
+            if (file is File && file.path.endsWith('.json')) {
+              try {
+                final content = await file.readAsString();
+                final data = jsonDecode(content) as Map<String, dynamic>;
+                final key = file.path.split('/').last.replaceAll('.json', '');
+                result[key] = GetIt.instance.get<T>(
+                  instanceName: "${T.toString()}Json",
+                  param1: data,
+                  param2: null,
+                );
+              } catch (_) {}
+            }
+          }
+        }
+      }
+
+      return result;
+    } catch (_) {
+      return {};
+    }
   }
 
   Future<void> put(String key, T entity) async {
     if (!_opened) {
       throw Exception('Database ${T.runtimeType.toString()} not opened');
     }
-    final f = File("${_tableDir!.path}/${key}");
-    f.writeAsStringSync(jsonEncode(entity.toJson()), mode: FileMode.write);
+
+    try {
+      final jsonData = entity.toJson();
+
+      if (kIsWeb) {
+        // Web: use in-memory storage
+        _memoryStore[_storageKey]?[key] = jsonData;
+      } else {
+        // Native: write to file
+        final file = await _getEntityFile(key);
+        await file.writeAsString(jsonEncode(jsonData));
+      }
+    } catch (_) {}
   }
 
   Future<void> delete(String key) async {
     if (!_opened) {
       throw Exception('Database ${T.runtimeType.toString()} not opened');
     }
-    // final f = File("${_tableDir!.path}/${key}");
-    // f.writeAsStringSync(jsonEncode(entity.toJson()), mode: FileMode.write);
-    _tableDir!
-        .listSync()
-        .where((fse) => fse.path == key)
-        .forEach((fse) => fse.deleteSync());
+
+    try {
+      if (kIsWeb) {
+        // Web: use in-memory storage
+        _memoryStore[_storageKey]?.remove(key);
+      } else {
+        // Native: delete file
+        final file = await _getEntityFile(key);
+        if (await file.exists()) {
+          await file.delete();
+        }
+      }
+    } catch (_) {}
   }
 
   Future<int> deleteAll() async {
     if (!_opened) {
       throw Exception('Database ${T.runtimeType.toString()} not opened');
     }
-    // final f = File("${_tableDir!.path}/${key}");
-    // f.writeAsStringSync(jsonEncode(entity.toJson()), mode: FileMode.write);
-    int deleted = 0;
-    _tableDir!.listSync().forEach((fse) {
-      fse.deleteSync();
-      deleted++;
-    });
-    return deleted;
+
+    try {
+      int count = 0;
+
+      if (kIsWeb) {
+        // Web: use in-memory storage
+        count = _memoryStore[_storageKey]?.length ?? 0;
+        _memoryStore[_storageKey]?.clear();
+      } else {
+        // Native: delete all files in directory
+        final dir = await _getEntityDirectory();
+        if (await dir.exists()) {
+          final files = dir.listSync();
+          for (final file in files) {
+            if (file is File && file.path.endsWith('.json')) {
+              await file.delete();
+              count++;
+            }
+          }
+        }
+      }
+
+      return count;
+    } catch (_) {
+      return 0;
+    }
   }
 }

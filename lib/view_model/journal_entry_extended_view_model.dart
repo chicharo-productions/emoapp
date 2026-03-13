@@ -1,7 +1,9 @@
 import 'package:emoapp/model/journal_entry_extended.dart';
 import 'package:emoapp/model/journal_type.dart';
+import 'package:emoapp/model/topic.dart';
 import 'package:emoapp/services/journal_entry_extended_service.dart';
 import 'package:emoapp/services/service_locator.dart';
+import 'package:emoapp/services/sqf_entity_service.dart';
 
 import 'package:flutter/widgets.dart';
 import 'package:get_it/get_it.dart';
@@ -17,6 +19,9 @@ class JournalEntryExtendedViewModel extends ChangeNotifier {
       emotionalLevel: _unchangedModel.emotionalLevel,
       type: model.type,
       discussionId: model.discussionId,
+      title: _unchangedModel.title,
+      tags: List.from(_unchangedModel.tags),
+      topicId: _unchangedModel.topicId,
     );
   }
   final serviceLocator = ServiceLocatorRegistrar();
@@ -73,6 +78,8 @@ class JournalEntryExtendedViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  DateTime timeStampAsDateTime() => _model.timeStamp;
+
   int get emotionalLevel => _model.emotionalLevel;
   set emotionalLevel(int level) {
     _model.emotionalLevel = level;
@@ -96,11 +103,40 @@ class JournalEntryExtendedViewModel extends ChangeNotifier {
     }
   }
 
-  // List<String> get hashtags => _model.hashtags;
-  // set hashtags(List<String> value) {
-  //   _model.hashtags = value;
-  //   notifyListeners();
-  // }
+  String get topicId => _model.topicId;
+  set topicId(String value) {
+    _model.topicId = value;
+    notifyListeners();
+  }
+
+  String get title => _model.title;
+  set title(String value) {
+    _model.title = value;
+    notifyListeners();
+  }
+
+  List<String> get tags => _model.tags;
+  set tags(List<String> value) {
+    _model.tags = value;
+    notifyListeners();
+  }
+
+  void addTag(String tag) {
+    if (!_model.tags.contains(tag)) {
+      _model.tags.add(tag);
+      notifyListeners();
+    }
+  }
+
+  void removeTag(String tag) {
+    _model.tags.remove(tag);
+    notifyListeners();
+  }
+
+  Future<List<Topic>> getAvailableTopics() async {
+    final service = GetIt.instance.get<FlatFileEntityService<Topic>>();
+    return (await service.getAll()).toList();
+  }
 
   Future<void> save() async {
     _unchangedModel
@@ -109,7 +145,10 @@ class JournalEntryExtendedViewModel extends ChangeNotifier {
       // ..hashtags = _model.hashtags
       ..timeStamp = _model.timeStamp
       ..type = _model.type
-      ..discussionId = _model.discussionId;
+      ..discussionId = _model.discussionId
+      ..topicId = _model.topicId
+      ..title = _model.title
+      ..tags = _model.tags;
 
     await GetIt.instance
         .get<JournalEntryExtendedService>()
@@ -127,7 +166,10 @@ class JournalEntryExtendedViewModel extends ChangeNotifier {
       ..text = _model.text
       ..timeStamp = _model.timeStamp
       ..type = _model.type
-      ..discussionId = _model.discussionId;
+      ..discussionId = _model.discussionId
+      ..topicId = _model.topicId
+      ..title = _model.title
+      ..tags = _model.tags;
     notifyListeners();
   }
 

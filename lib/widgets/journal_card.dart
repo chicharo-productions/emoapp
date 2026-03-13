@@ -1,9 +1,12 @@
 import 'package:emoapp/model/journal_colors.dart';
 import 'package:emoapp/model/journal_entry_extended.dart';
+import 'package:emoapp/model/topic.dart';
 import 'package:emoapp/services/service_locator.dart';
+import 'package:emoapp/services/sqf_entity_service.dart';
 import 'package:emoapp/view_model/journal_entry_extended_view_model.dart';
 import 'package:emoapp/widgets/journal_edit_card.dart';
 import 'package:flutter/material.dart';
+import 'package:get_it/get_it.dart';
 import 'package:provider/provider.dart';
 
 class JournalCard extends StatefulWidget {
@@ -37,9 +40,12 @@ class _JournalCard extends State<JournalCard> {
               child: ListTile(
                 tileColor: Colors.transparent,
                 title: Text(
-                  '${viewModel.emotionalLevelAsIcon} ${viewModel.text}',
+                  viewModel.title.isNotEmpty ? viewModel.title : 'No title',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                subtitle: Text(viewModel.timeStamp),
+                subtitle: Text(
+                    '${viewModel.timeStamp} - ${viewModel.emotionalLevelAsIcon} ${viewModel.text}'),
                 onTap: () => Navigator.of(context)
                     .push(
                       MaterialPageRoute(

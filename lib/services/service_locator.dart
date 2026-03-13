@@ -1,9 +1,11 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:emoapp/model/discussion/discussion.dart';
 import 'package:emoapp/model/discussion/discussion_message.dart';
 import 'package:emoapp/model/entity_base_type.dart';
 import 'package:emoapp/model/journal_entry_extended.dart';
 import 'package:emoapp/model/journal_type.dart';
+import 'package:emoapp/model/topic.dart';
 import 'package:emoapp/services/journal_entry_extended_service.dart';
 import 'package:emoapp/services/sdb.dart';
 import 'package:emoapp/services/sqf_entity_service.dart';
@@ -28,14 +30,18 @@ class ServiceLocatorRegistrar {
   Future<void> register() async {
     var hivePath = 'emo';
     try {
-      if (Platform.isAndroid) {
+      // Skip path_provider on web platform
+      if (!kIsWeb && Platform.isAndroid) {
         await [
           Permission.storage,
         ].request();
       }
-      final appDocDir = await getApplicationDocumentsDirectory();
-      final appDocPath = appDocDir.path;
-      hivePath = appDocPath;
+      // Only try to get documents directory on non-web platforms
+      if (!kIsWeb) {
+        final appDocDir = await getApplicationDocumentsDirectory();
+        final appDocPath = appDocDir.path;
+        hivePath = appDocPath;
+      }
       // ignore: avoid_catches_without_on_clauses
     } catch (_) {}
     // await Hive.initFlutter(hivePath);
@@ -49,6 +55,7 @@ class ServiceLocatorRegistrar {
     await registerProfile();
     await registerJournalEntryExtended();
     await registerDiscussion();
+    await registerTopic();
   }
 
   /// used for registering entity instantiation with or without parameters
@@ -215,7 +222,31 @@ class ServiceLocatorRegistrar {
     print(debugDiscussion);
   }
 
-  // void journals() {
+  Future<void> registerTopic() async {
+    (bool, Exception?) topicValidation(Topic t) => t.title.isNotEmpty
+        ? (true, null)
+        : (false, Exception('topic title is not there'));
+
+    registerEntityInvocatorWithParams<Topic,
+        (String title, String description)>(
+      ((String title, String description) params) => Topic(
+        id: const Uuid().v4(),
+        title: params.$1,
+        description: params.$2,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      ),
+      'topic-box',
+    );
+
+    final topic = GetIt.instance.registerSingleton<FlatFileEntityService<Topic>>(
+      FlatFileEntityService<Topic>(topicValidation, Sdb<Topic>()),
+    );
+
+    GetIt.instance.registerFactoryParam<Topic, Map<String, dynamic>, void>(
+        (json, _) => Topic.fromJson(json),
+        instanceName: "${Topic}Json");
+  }
   //   registerEntityInvocatorWithParams(
   //     // ignore: prefer_expression_function_bodies
   //     ((String text, int emotionalLevel) params) {

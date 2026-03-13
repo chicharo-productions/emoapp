@@ -21,3 +21,4 @@ const int discussionMessageTypeId = 12;
 const int profileTypeId = 13;
 const int calendarAttendeeTypeId = 14;
 const int calendarEventTypeId = 15;
+const int topicTypeId = 16;

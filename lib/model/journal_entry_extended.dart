@@ -19,11 +19,20 @@ class JournalEntryExtended extends EntityBase<JournalEntryExtended> {
     required this.emotionalLevel,
     required this.type,
     required this.discussionId,
+    this.topicId = '',
     this.calendarEntryId = '',
-  });
+    this.title = '',
+    List<String>? tags,
+  }) : tags = tags ?? [];
 
   /// contains the information stored in a journal entry
   String text;
+
+  /// optional title for the journal entry
+  String title;
+
+  /// tags associated with this journal entry
+  List<String> tags;
 
   /// date the journal entry was created
   DateTime timeStamp;
@@ -53,6 +62,9 @@ class JournalEntryExtended extends EntityBase<JournalEntryExtended> {
   String calendarEntryId;
 
   String discussionId;
+
+  /// optional topic association
+  String topicId;
 
   @override
   factory JournalEntryExtended.fromJson(Map<String, dynamic> json) {
