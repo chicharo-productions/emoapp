@@ -1,9 +1,7 @@
-import 'dart:io';
 
 import 'package:emoapp/model/entity_base.dart';
 import 'package:emoapp/services/sdb.dart';
 import 'package:emoapp/services/service_locator.dart';
-import 'package:flutter/foundation.dart';
 import 'package:get_it/get_it.dart';
 import 'package:uuid/uuid.dart';
 

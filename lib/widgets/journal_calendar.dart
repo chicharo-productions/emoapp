@@ -5,7 +5,6 @@ import 'package:emoapp/services/calendar/day_creator_service.dart';
 import 'package:emoapp/view_model/journal_calendar_view_model.dart';
 import 'package:emoapp/widgets/journal_list.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 

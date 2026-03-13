@@ -1,19 +1,8 @@
-import 'package:emoapp/model/discussion/discussion.dart';
 import 'package:emoapp/model/journal_colors.dart';
-import 'package:emoapp/model/journal_entry_extended.dart';
-import 'package:emoapp/model/journal_type.dart';
-import 'package:emoapp/services/journal_entry_extended_service.dart';
 import 'package:emoapp/services/service_locator.dart';
-import 'package:emoapp/services/flat_file_service.dart';
 import 'package:emoapp/widgets/dashboard.dart';
-import 'package:emoapp/widgets/discussion_lobby.dart';
-import 'package:emoapp/widgets/journal_calendar.dart';
-import 'package:emoapp/widgets/journal_edit_card.dart';
-import 'package:emoapp/widgets/journal_entry_stats.dart';
-import 'package:emoapp/widgets/journal_list.dart';
 
 import 'package:flutter/material.dart';
-import 'package:get_it/get_it.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

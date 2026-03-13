@@ -7,7 +7,6 @@ import 'package:emoapp/widgets/journal_card.dart';
 import 'package:emoapp/widgets/journal_edit_card.dart';
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
-import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 class TopicDetailView extends StatefulWidget {

@@ -1,3 +1,5 @@
+// ignore_for_file: unused_import
+
 import 'package:emoapp/model/journal_colors.dart';
 import 'package:emoapp/model/journal_entry_extended.dart';
 import 'package:emoapp/model/topic.dart';
