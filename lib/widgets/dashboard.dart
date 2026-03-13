@@ -1,3 +1,4 @@
+import 'package:emoapp/model/journal_colors.dart' as JournalColors;
 import 'package:emoapp/widgets/topic_list_view.dart';
 import 'package:emoapp/widgets/journal_calendar.dart';
 import 'package:flutter/material.dart';
@@ -24,7 +25,7 @@ class _DashboardState extends State<Dashboard> {
           children: [
             const DrawerHeader(
               decoration: BoxDecoration(
-                color: Colors.blue,
+                color: JournalColors.primaryColor,
               ),
               child: Text(
                 'Navigation',
@@ -60,7 +61,7 @@ class _DashboardState extends State<Dashboard> {
       ),
       body: IndexedStack(
         index: _selectedIndex,
-        children: const [
+        children: [
           TopicListView(),
           JournalCalendar(),
         ],

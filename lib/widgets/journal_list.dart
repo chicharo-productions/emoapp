@@ -7,7 +7,9 @@ import 'package:get_it/get_it.dart';
 import 'package:provider/provider.dart';
 
 class JournalList extends StatefulWidget {
-  const JournalList(Key key, {this.month = 0, this.day = 0}) : super(key: key);
+  const JournalList(Key key, {this.year = 0, this.month = 0, this.day = 0})
+      : super(key: key);
+  final int year;
   final int month;
   final int day;
 
@@ -17,6 +19,18 @@ class JournalList extends StatefulWidget {
 
 class _JournalList extends State<JournalList> {
   final key = GlobalKey();
+  int year = 0;
+
+  @override
+  void initState() {
+    if (widget.year == 0) {
+      year = DateTime.now().year;
+    } else {
+      year = widget.year;
+    }
+    // TODO: implement initState
+    super.initState();
+  }
 
   @override
   Widget build(BuildContext context) =>
@@ -31,9 +45,11 @@ class _JournalList extends State<JournalList> {
                     (j) {
                       if (widget.day > 0) {
                         return j.timeStamp.day == widget.day &&
-                            j.timeStamp.month == widget.month;
+                            j.timeStamp.month == widget.month &&
+                            j.timeStamp.year == year;
                       } else {
-                        return j.timeStamp.month == widget.month;
+                        return j.timeStamp.month == widget.month &&
+                            j.timeStamp.year == year;
                       }
                     },
                   ),

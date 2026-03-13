@@ -3,6 +3,7 @@ import 'package:emoapp/model/journal_type.dart';
 import 'package:emoapp/model/topic.dart';
 import 'package:emoapp/services/journal_entry_extended_service.dart';
 import 'package:emoapp/view_model/topic_detail_view_model.dart';
+import 'package:emoapp/widgets/journal_card.dart';
 import 'package:emoapp/widgets/journal_edit_card.dart';
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
@@ -348,35 +349,38 @@ class _TopicDetailViewState extends State<TopicDetailView> {
                                 itemCount: entries.length,
                                 itemBuilder: (context, index) {
                                   final entry = entries[index];
-                                  return Card(
-                                    child: ListTile(
-                                      title: Text(
-                                        entry.text.length > 100
-                                            ? '${entry.text.substring(0, 100)}...'
-                                            : entry.text,
-                                        maxLines: 2,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                      subtitle: Text(
-                                        'Created: ${DateFormat.yMd().format(entry.timeStamp)}',
-                                      ),
-                                      onTap: () async {
-                                        await Navigator.of(context)
-                                            .push(
-                                          MaterialPageRoute(
-                                            builder: (context) =>
-                                                JournalEditCard(
-                                              key: Key(entry.id),
-                                              journalEntry: entry,
-                                            ),
-                                          ),
-                                        )
-                                            .then((_) {
-                                          setState(() {});
-                                        });
-                                      },
-                                    ),
+                                  return JournalCard(
+                                    journalEntry: entry,
                                   );
+                                  // return Card(
+                                  //   child: ListTile(
+                                  //     title: Text(
+                                  //       entry.title.isEmpty
+                                  //           ? '(no title)'
+                                  //           : entry.title,
+                                  //       maxLines: 2,
+                                  //       overflow: TextOverflow.ellipsis,
+                                  //     ),
+                                  //     subtitle: Text(
+                                  //       '${DateFormat.yMd().format(entry.timeStamp)} - ${entry.text.length > 100 ? '${entry.text.substring(0, 100)}...' : entry.text}',
+                                  //     ),
+                                  //     onTap: () async {
+                                  //       await Navigator.of(context)
+                                  //           .push(
+                                  //         MaterialPageRoute(
+                                  //           builder: (context) =>
+                                  //               JournalEditCard(
+                                  //             key: Key(entry.id),
+                                  //             journalEntry: entry,
+                                  //           ),
+                                  //         ),
+                                  //       )
+                                  //           .then((_) {
+                                  //         setState(() {});
+                                  //       });
+                                  //     },
+                                  //   ),
+                                  // );
                                 },
                               );
                             },

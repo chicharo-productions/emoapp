@@ -5,6 +5,7 @@ import 'package:emoapp/services/calendar/day_creator_service.dart';
 import 'package:emoapp/view_model/journal_calendar_view_model.dart';
 import 'package:emoapp/widgets/journal_list.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
@@ -179,6 +180,7 @@ class _JournalCalendar extends State<JournalCalendar> {
     Iterable<JournalEntryExtended> entries,
     JournalType journalType,
   ) {
+    const txtStyle = const TextStyle(fontSize: 12, fontWeight: FontWeight.bold);
     switch (journalType) {
       case JournalType.entry:
         final filteredEntries = entries
@@ -195,24 +197,23 @@ class _JournalCalendar extends State<JournalCalendar> {
             decoration: const BoxDecoration(
               color: entryColor,
             ),
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: filteredEntries
-                    .map((entry) => Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 4.0),
-                          child: Chip(
-                            label: Text(
-                              entry.title.isEmpty ? '(no title)' : entry.title,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(fontSize: 12),
-                            ),
-                            visualDensity: VisualDensity.compact,
+            child: Wrap(
+              // clipBehavior: Clip.hardEdge,
+              children: filteredEntries
+                  .map((entry) => Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                        child: Chip(
+                          backgroundColor: JournalColors.entry.value,
+                          label: Text(
+                            entry.title.isEmpty ? '(no title)' : entry.title,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: txtStyle,
                           ),
-                        ))
-                    .toList(),
-              ),
+                          visualDensity: VisualDensity.compact,
+                        ),
+                      ))
+                  .toList(),
             ),
           );
         }
@@ -239,11 +240,12 @@ class _JournalCalendar extends State<JournalCalendar> {
                     .map((entry) => Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 4.0),
                           child: Chip(
+                            backgroundColor: JournalColors.perspective.value,
                             label: Text(
                               entry.title.isEmpty ? '(no title)' : entry.title,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(fontSize: 12),
+                              style: txtStyle,
                             ),
                             visualDensity: VisualDensity.compact,
                           ),
@@ -276,11 +278,12 @@ class _JournalCalendar extends State<JournalCalendar> {
                     .map((entry) => Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 4.0),
                           child: Chip(
+                            backgroundColor: JournalColors.retrospective.value,
                             label: Text(
                               entry.title.isEmpty ? '(no title)' : entry.title,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(fontSize: 12),
+                              style: txtStyle,
                             ),
                             visualDensity: VisualDensity.compact,
                           ),
@@ -492,9 +495,32 @@ class _JournalCalendar extends State<JournalCalendar> {
             appBar: AppBar(
               // Here we take the value from the MyHomePage object that was created by
               // the App.build method, and use it to set our appbar title.
-              title: AutoSizeText(
-                DateFormat.MMMM().format(DateTime.now()),
-              ),
+              title: Row(children: [
+                AutoSizeText(
+                  "${DateFormat.y().format(DateTime(
+                        DateTime.now().year,
+                        viewModel.currentMonth,
+                        1,
+                      )) + " " + DateFormat.MMMM().format(
+                        DateTime(
+                          DateTime.now().year,
+                          viewModel.currentMonth,
+                          1,
+                        ),
+                      )}",
+                ),
+                Padding(padding: const EdgeInsets.fromLTRB(8, 0, 0, 0)),
+                TextButton(
+                    onPressed: () {
+                      viewModel.previousMonth();
+                    },
+                    child: Text('<')),
+                TextButton(
+                    onPressed: () {
+                      viewModel.nextMonth();
+                    },
+                    child: Text('>')),
+              ]),
             ),
             body: journalCalendar(4, viewModel),
           ),

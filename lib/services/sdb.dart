@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:yaml/yaml.dart';
 import 'package:emoapp/model/json_serializable_interface.dart';
 import 'package:get_it/get_it.dart';
 
@@ -198,5 +199,150 @@ class Sdb<T extends JsonSerializableInterface<T>> {
     } catch (_) {
       return 0;
     }
+  }
+
+  /// Export a single entity to YAML string
+  Future<String> getAsYaml(String key) async {
+    try {
+      final entity = await get(key);
+      if (entity == null) return '';
+      return _mapToYaml(entity.toJson());
+    } catch (_) {
+      return '';
+    }
+  }
+
+  /// Export all entities to YAML string
+  Future<String> getAllAsYaml() async {
+    try {
+      final allEntities = await getAll();
+      final yamlMap = <String, dynamic>{};
+
+      for (final entry in allEntities.entries) {
+        yamlMap[entry.key] = entry.value.toJson();
+      }
+
+      return _mapToYaml(yamlMap);
+    } catch (_) {
+      return '';
+    }
+  }
+
+  /// Import entity from YAML string
+  Future<T?> fromYaml(String yamlString) async {
+    try {
+      final jsonData =
+          jsonDecode(jsonEncode(loadYaml(yamlString))) as Map<String, dynamic>;
+      return GetIt.instance.get<T>(
+        instanceName: "${T.toString()}Json",
+        param1: jsonData,
+        param2: null,
+      );
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Export entity to YAML file
+  Future<void> exportToYamlFile(String key, String filePath) async {
+    try {
+      final entity = await get(key);
+      if (entity == null) return;
+
+      final file = File(filePath);
+      final yamlString = _mapToYaml(entity.toJson());
+      await file.writeAsString(yamlString);
+    } catch (_) {}
+  }
+
+  /// Import entity from YAML file
+  Future<T?> importFromYamlFile(String filePath) async {
+    try {
+      final file = File(filePath);
+      if (!await file.exists()) return null;
+
+      final content = await file.readAsString();
+      return await fromYaml(content);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Helper method to convert a map to YAML string
+  static String _mapToYaml(Map<String, dynamic> map,
+      [String indent = '', bool isRoot = true]) {
+    final buffer = StringBuffer();
+    final entries = map.entries.toList();
+
+    for (int i = 0; i < entries.length; i++) {
+      final entry = entries[i];
+      final key = entry.key;
+      final value = entry.value;
+
+      buffer.write('$indent$key: ');
+
+      if (value is Map<String, dynamic>) {
+        buffer.write('\n');
+        buffer.write(_mapToYaml(value, '$indent  ', false));
+      } else if (value is List) {
+        if (value.isEmpty) {
+          buffer.write('[]');
+        } else if (value.first is Map<String, dynamic>) {
+          buffer.write('\n');
+          for (int j = 0; j < value.length; j++) {
+            final item = value[j];
+            buffer.write('$indent  - ');
+            if (item is Map<String, dynamic>) {
+              final mapEntries = item.entries.toList();
+              for (int k = 0; k < mapEntries.length; k++) {
+                final mapEntry = mapEntries[k];
+                buffer.write('${mapEntry.key}: ');
+                if (mapEntry.value is DateTime) {
+                  buffer.write((mapEntry.value as DateTime).toIso8601String());
+                } else {
+                  buffer.write(_escapeYamlValue(mapEntry.value));
+                }
+                if (k < mapEntries.length - 1) {
+                  buffer.write('\n$indent    ');
+                }
+              }
+            } else {
+              buffer.write(_escapeYamlValue(item));
+            }
+            if (j < value.length - 1) {
+              buffer.write('\n');
+            }
+          }
+        } else {
+          buffer.write('[${value.map(_escapeYamlValue).join(', ')}]');
+        }
+      } else if (value is DateTime) {
+        buffer.write(value.toIso8601String());
+      } else {
+        buffer.write(_escapeYamlValue(value));
+      }
+
+      if (i < entries.length - 1) {
+        buffer.write('\n');
+      }
+    }
+
+    return buffer.toString();
+  }
+
+  /// Escape YAML values
+  static String _escapeYamlValue(dynamic value) {
+    if (value == null) return 'null';
+    if (value is String) {
+      if (value.isEmpty) return "''";
+      if (value.contains('\n') ||
+          value.contains(':') ||
+          value.contains('#') ||
+          value.startsWith(' ')) {
+        return '"${value.replaceAll('"', '\\"')}"';
+      }
+      return value;
+    }
+    return value.toString();
   }
 }

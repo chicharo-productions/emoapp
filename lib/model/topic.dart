@@ -29,8 +29,9 @@ class Topic extends EntityBase<Topic> {
   @override
   factory Topic.fromJson(Map<String, dynamic> json) {
     if (json['todos'] != null && json['todos'] is List<Todo>) {
-      json['todos'] =
-          (json['todos'] as List).map((e) => Todo.fromJson(e)).toList();
+      json['todos'] = (json['todos'] as List)
+          .map((e) => e is Todo ? e : Todo.fromJson(e))
+          .toList();
     }
     return _$TopicFromJson(json);
   }

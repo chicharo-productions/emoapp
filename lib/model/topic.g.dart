@@ -14,9 +14,11 @@ Topic _$TopicFromJson(Map<String, dynamic> json) => Topic(
       updatedAt: DateTime.parse(json['updatedAt'] as String),
       tags: (json['tags'] as List<dynamic>?)?.map((e) => e as String).toList(),
       color: json['color'] as String? ?? '0xFF1976D2',
-      todos: (json['todos'] as List<dynamic>?)
-          ?.map((e) => Todo.fromJson(e as Map<String, dynamic>))
-          .toList(),
+      todos: json['todos'] is List<Todo>
+          ? json['todos']
+          : (json['todos'] as List<dynamic>?)
+              ?.map((e) => Todo.fromJson(e as Map<String, dynamic>))
+              .toList(),
     );
 
 Map<String, dynamic> _$TopicToJson(Topic instance) => <String, dynamic>{
