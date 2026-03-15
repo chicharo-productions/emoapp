@@ -7,6 +7,7 @@ import 'package:emoapp/services/service_locator.dart';
 import 'package:emoapp/services/flat_file_service.dart';
 import 'package:emoapp/view_model/journal_entry_extended_view_model.dart';
 import 'package:emoapp/widgets/journal_edit_card.dart';
+import 'package:emoapp/widgets/emotion_check_in_view.dart';
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 import 'package:provider/provider.dart';
@@ -54,6 +55,13 @@ class _JournalCard extends State<JournalCard> {
                                 ))
                             .toList(),
                       ),
+                      if (widget.journalEntry.emotionIds.isNotEmpty) ...[
+                        const SizedBox(height: 6),
+                        EmotionDisplayWidget(
+                          emotionIds: widget.journalEntry.emotionIds,
+                          maxDisplay: 4,
+                        ),
+                      ],
                       Text(
                         viewModel.title.isNotEmpty
                             ? viewModel.title

@@ -1,6 +1,8 @@
 import 'package:auto_size_text/auto_size_text.dart';
+import 'package:emoapp/model/default_emotions.dart';
 import 'package:emoapp/model/journal_entry_extended.dart';
 import 'package:emoapp/model/journal_type.dart';
+import 'package:emoapp/model/topic.dart';
 import 'package:emoapp/services/calendar/day_creator_service.dart';
 import 'package:emoapp/view_model/journal_calendar_view_model.dart';
 import 'package:emoapp/widgets/journal_list.dart';
@@ -78,6 +80,25 @@ class _JournalCalendar extends State<JournalCalendar> {
       count > 1 ? '${word}s' : word;
   String singularOrPluralIf(String singular, String plural, int count) =>
       count > 1 ? plural : singular;
+
+  /// Get title or emotion emojis for display
+  /// If entry has no title but has emotions, display emotion emojis
+  /// Otherwise display title or "(no title)"
+  String _getTitleOrEmotions(JournalEntryExtended entry) {
+    if (entry.title.isNotEmpty) {
+      return entry.title;
+    }
+    if (entry.emotionIds.isNotEmpty) {
+      final emotionEmojis = entry.emotionIds
+          .map((id) => DefaultEmotions.findEmotionById(id)?.emoji ?? '')
+          .where((emoji) => emoji.isNotEmpty)
+          .toList();
+      if (emotionEmojis.isNotEmpty) {
+        return emotionEmojis.join(' ');
+      }
+    }
+    return '(no title)';
+  }
 
   Widget calendarDayTypeIndicatorOld(
     final DateTime currentDate,
@@ -204,7 +225,7 @@ class _JournalCalendar extends State<JournalCalendar> {
                         child: Chip(
                           backgroundColor: JournalColors.entry.value,
                           label: Text(
-                            entry.title.isEmpty ? '(no title)' : entry.title,
+                            _getTitleOrEmotions(entry),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: txtStyle,
@@ -241,7 +262,7 @@ class _JournalCalendar extends State<JournalCalendar> {
                           child: Chip(
                             backgroundColor: JournalColors.perspective.value,
                             label: Text(
-                              entry.title.isEmpty ? '(no title)' : entry.title,
+                              _getTitleOrEmotions(entry),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: txtStyle,
@@ -279,7 +300,7 @@ class _JournalCalendar extends State<JournalCalendar> {
                           child: Chip(
                             backgroundColor: JournalColors.retrospective.value,
                             label: Text(
-                              entry.title.isEmpty ? '(no title)' : entry.title,
+                              _getTitleOrEmotions(entry),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: txtStyle,
@@ -379,6 +400,7 @@ class _JournalCalendar extends State<JournalCalendar> {
         DayCreatorService.getDays(dateForJournal.month, dateForJournal.year);
 
     return GridView(
+      physics: const NeverScrollableScrollPhysics(),
       shrinkWrap: true,
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: daysPerRow,
@@ -521,7 +543,79 @@ class _JournalCalendar extends State<JournalCalendar> {
                     child: Text('>')),
               ]),
             ),
-            body: journalCalendar(4, viewModel),
+            body: Column(
+              children: [
+                // Topic filter section
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            'Filter by Topic:',
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          if (viewModel.selectedTopicIds.isNotEmpty)
+                            TextButton(
+                              onPressed: () => viewModel.clearTopicFilter(),
+                              child: const Text('Clear'),
+                            ),
+                        ],
+                      ),
+                      FutureBuilder<List<Topic>>(
+                        future: viewModel.getAvailableTopics(),
+                        builder: (context, snapshot) {
+                          if (!snapshot.hasData) {
+                            return const SizedBox(
+                              height: 8,
+                              child: CircularProgressIndicator(),
+                            );
+                          }
+
+                          final topics = snapshot.data ?? [];
+                          if (topics.isEmpty) {
+                            return const Padding(
+                              padding: EdgeInsets.symmetric(vertical: 8.0),
+                              child: Text('No topics available'),
+                            );
+                          }
+
+                          return SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            child: Row(
+                              children: topics
+                                  .map(
+                                    (topic) => Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 4.0,
+                                      ),
+                                      child: FilterChip(
+                                        label: Text(topic.title),
+                                        selected: viewModel.selectedTopicIds
+                                            .contains(topic.id),
+                                        onSelected: (selected) {
+                                          viewModel.toggleTopic(topic.id);
+                                        },
+                                      ),
+                                    ),
+                                  )
+                                  .toList(),
+                            ),
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+                // Calendar grid
+                Expanded(
+                  child: journalCalendar(4, viewModel),
+                ),
+              ],
+            ),
           ),
         ),
       );

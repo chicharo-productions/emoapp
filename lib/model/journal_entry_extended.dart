@@ -23,7 +23,9 @@ class JournalEntryExtended extends EntityBase<JournalEntryExtended> {
     this.calendarEntryId = '',
     this.title = '',
     List<String>? tags,
-  }) : tags = tags ?? [];
+    List<String>? emotionIds,
+  })  : tags = tags ?? [],
+        emotionIds = emotionIds ?? [];
 
   /// contains the information stored in a journal entry
   String text;
@@ -33,6 +35,9 @@ class JournalEntryExtended extends EntityBase<JournalEntryExtended> {
 
   /// tags associated with this journal entry
   List<String> tags;
+
+  /// emotion IDs associated with this journal entry
+  List<String> emotionIds;
 
   /// date the journal entry was created
   DateTime timeStamp;

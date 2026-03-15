@@ -3,13 +3,17 @@ import 'package:emoapp/model/journal_entry_extended.dart';
 import 'package:emoapp/model/journal_type.dart';
 import 'package:emoapp/model/topic.dart';
 import 'package:emoapp/services/calendar/day_creator_service.dart';
+import 'package:emoapp/services/flat_file_service.dart';
 import 'package:emoapp/view_model/journal_entry_extended_view_model.dart';
+import 'package:emoapp/widgets/emotion_check_in_view.dart';
 // import 'package:emojis_null_safe/emojis.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 // import 'package:hashtagable/widgets/hashtag_text_field.dart';
+import 'package:get_it/get_it.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:uuid/uuid.dart';
 
 class JournalEditCard extends StatefulWidget {
   const JournalEditCard({required this.journalEntry, Key? key})
@@ -24,12 +28,14 @@ class _JournalEditCard extends State<JournalEditCard> {
   final TextEditingController _controller = TextEditingController();
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _tagController = TextEditingController();
+  late List<String> _emotionIds;
 
   @override
   void initState() {
     super.initState();
     _controller.text = widget.journalEntry.text;
     _titleController.text = widget.journalEntry.title;
+    _emotionIds = List.from(widget.journalEntry.emotionIds);
   }
 
   @override
@@ -38,6 +44,54 @@ class _JournalEditCard extends State<JournalEditCard> {
     _titleController.dispose();
     _tagController.dispose();
     super.dispose();
+  }
+
+  Future<void> _convertToTopic(
+    BuildContext context,
+    JournalEntryExtendedViewModel viewModel,
+  ) async {
+    try {
+      final now = DateTime.now();
+      final topicService = GetIt.instance.get<FlatFileEntityService<Topic>>();
+
+      final newTopic = Topic(
+        id: const Uuid().v4(),
+        title: _titleController.text.isEmpty
+            ? 'Topic from Entry (${DateFormat('dd.MM.yyyy').format(now)})'
+            : _titleController.text,
+        description: _controller.text,
+        color: '0xFFD32F2F', // Material red
+        createdAt: now,
+        updatedAt: now,
+      );
+
+      await topicService.create(
+        newTopic,
+        (t) => t.title.isNotEmpty
+            ? (true, null)
+            : (false, Exception('Topic title cannot be empty')),
+      );
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Topic "${newTopic.title}" created successfully!',
+            ),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to create topic: $e'),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    }
   }
 
   @override
@@ -52,8 +106,15 @@ class _JournalEditCard extends State<JournalEditCard> {
               title: const Text(''), //widget.journalEntry.id),
               actions: [
                 IconButton(
+                  icon: const Icon(Icons.bookmark_add),
+                  tooltip: 'Convert to Topic',
+                  onPressed: () => _convertToTopic(context, viewModel),
+                ),
+                IconButton(
                   icon: const Icon(Icons.save),
                   onPressed: () async {
+                    // Update view model with emotion IDs before saving
+                    viewModel.emotionIds = _emotionIds;
                     await viewModel.save().then(
                           (value) => Navigator.of(context).pop(),
                         );
@@ -272,6 +333,17 @@ class _JournalEditCard extends State<JournalEditCard> {
                               return const CircularProgressIndicator();
                             }
                             final topics = snapshot.data ?? [];
+
+                            // Pre-select first topic if no topic is selected
+                            if (viewModel.topicId.isEmpty &&
+                                topics.isNotEmpty) {
+                              WidgetsBinding.instance.addPostFrameCallback((_) {
+                                if (viewModel.topicId.isEmpty) {
+                                  viewModel.topicId = topics.first.id;
+                                }
+                              });
+                            }
+
                             final selectedTopicExists = topics.any(
                               (topic) => topic.id == viewModel.topicId,
                             );
@@ -298,6 +370,42 @@ class _JournalEditCard extends State<JournalEditCard> {
                           },
                         );
                       },
+                    ),
+                    const SizedBox(height: 10),
+
+                    // Emotion selector
+                    const Text('Emotions (Optional)'),
+                    const SizedBox(height: 8),
+                    if (_emotionIds.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 8.0),
+                        child: EmotionDisplayWidget(
+                          emotionIds: _emotionIds,
+                          maxDisplay: 10,
+                        ),
+                      ),
+                    ElevatedButton.icon(
+                      onPressed: () async {
+                        final result = await showDialog<Map<String, dynamic>>(
+                          context: context,
+                          builder: (context) => const Dialog(
+                            child: EmotionCheckInView(),
+                          ),
+                        );
+
+                        if (result != null &&
+                            result['emotionIds'] is List<String>) {
+                          setState(() {
+                            _emotionIds = result['emotionIds'];
+                          });
+                        }
+                      },
+                      icon: const Icon(Icons.sentiment_satisfied),
+                      label: Text(
+                        _emotionIds.isEmpty
+                            ? 'Add Emotions'
+                            : 'Edit Emotions (${_emotionIds.length})',
+                      ),
                     ),
                     const SizedBox(height: 10),
 

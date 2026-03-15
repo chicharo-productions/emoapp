@@ -1,3 +1,5 @@
+// GENERATED CODE - DO NOT MODIFY BY HAND
+
 part of 'journal_entry_extended.dart';
 
 // **************************************************************************
@@ -16,9 +18,10 @@ JournalEntryExtended _$JournalEntryExtendedFromJson(
       topicId: json['topicId'] as String? ?? '',
       calendarEntryId: json['calendarEntryId'] as String? ?? '',
       title: json['title'] as String? ?? '',
-      tags:
-          (json['tags'] as List<dynamic>?)?.map((e) => e as String).toList() ??
-              [],
+      tags: (json['tags'] as List<dynamic>?)?.map((e) => e as String).toList(),
+      emotionIds: (json['emotionIds'] as List<dynamic>?)
+          ?.map((e) => e as String)
+          .toList(),
     );
 
 Map<String, dynamic> _$JournalEntryExtendedToJson(
@@ -28,6 +31,7 @@ Map<String, dynamic> _$JournalEntryExtendedToJson(
       'text': instance.text,
       'title': instance.title,
       'tags': instance.tags,
+      'emotionIds': instance.emotionIds,
       'timeStamp': instance.timeStamp.toIso8601String(),
       'emotionalLevel': instance.emotionalLevel,
       'type': instance.type,

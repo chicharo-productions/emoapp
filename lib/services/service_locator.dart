@@ -6,9 +6,12 @@ import 'package:emoapp/model/entity_base_type.dart';
 import 'package:emoapp/model/journal_entry_extended.dart';
 import 'package:emoapp/model/journal_type.dart';
 import 'package:emoapp/model/topic.dart';
+import 'package:emoapp/model/emotion.dart';
+import 'package:emoapp/model/default_emotions.dart';
 import 'package:emoapp/services/journal_entry_extended_service.dart';
 import 'package:emoapp/services/sdb.dart';
 import 'package:emoapp/services/flat_file_service.dart';
+import 'package:emoapp/services/emotion_service.dart';
 import 'package:get_it/get_it.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -56,6 +59,7 @@ class ServiceLocatorRegistrar {
     await registerJournalEntryExtended();
     await registerDiscussion();
     await registerTopic();
+    await registerEmotion();
   }
 
   /// used for registering entity instantiation with or without parameters
@@ -247,6 +251,42 @@ class ServiceLocatorRegistrar {
     GetIt.instance.registerFactoryParam<Topic, Map<String, dynamic>, void>(
         (json, _) => Topic.fromJson(json),
         instanceName: "${Topic}Json");
+
+    // Create default "General" topic if no topics exist
+    final existingTopics = await topic.where((t) => true);
+    if (existingTopics.isEmpty) {
+      final generalTopic = Topic(
+        id: const Uuid().v4(),
+        title: 'General',
+        description: 'Default general topic for journal entries',
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      );
+      await topic.create(generalTopic, topicValidation);
+    }
+  }
+
+  Future<void> registerEmotion() async {
+    (bool, Exception?) emotionValidation(Emotion e) => e.name.isNotEmpty
+        ? (true, null)
+        : (false, Exception('emotion name is not there'));
+
+    final emotion =
+        GetIt.instance.registerSingleton<FlatFileEntityService<Emotion>>(
+      EmotionService(emotionValidation, Sdb<Emotion>()),
+    );
+
+    GetIt.instance.registerFactoryParam<Emotion, Map<String, dynamic>, void>(
+        (json, _) => Emotion.fromJson(json),
+        instanceName: "${Emotion}Json");
+
+    // Register default emotions if not already present
+    final existingEmotions = await emotion.where((e) => true);
+    if (existingEmotions.isEmpty) {
+      for (final defaultEmotion in DefaultEmotions.getAllEmotions()) {
+        await emotion.create(defaultEmotion, emotionValidation);
+      }
+    }
   }
   //   registerEntityInvocatorWithParams(
   //     // ignore: prefer_expression_function_bodies

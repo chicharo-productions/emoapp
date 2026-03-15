@@ -22,6 +22,7 @@ class JournalEntryExtendedViewModel extends ChangeNotifier {
       title: _unchangedModel.title,
       tags: List.from(_unchangedModel.tags),
       topicId: _unchangedModel.topicId,
+      emotionIds: List.from(_unchangedModel.emotionIds),
     );
   }
   final serviceLocator = ServiceLocatorRegistrar();
@@ -133,6 +134,12 @@ class JournalEntryExtendedViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  List<String> get emotionIds => _model.emotionIds;
+  set emotionIds(List<String> value) {
+    _model.emotionIds = value;
+    notifyListeners();
+  }
+
   Future<List<Topic>> getAvailableTopics() async {
     final service = GetIt.instance.get<FlatFileEntityService<Topic>>();
     return (await service.getAll()).toList();
@@ -148,7 +155,8 @@ class JournalEntryExtendedViewModel extends ChangeNotifier {
       ..discussionId = _model.discussionId
       ..topicId = _model.topicId
       ..title = _model.title
-      ..tags = _model.tags;
+      ..tags = _model.tags
+      ..emotionIds = _model.emotionIds;
 
     await GetIt.instance
         .get<JournalEntryExtendedService>()
@@ -169,7 +177,8 @@ class JournalEntryExtendedViewModel extends ChangeNotifier {
       ..discussionId = _model.discussionId
       ..topicId = _model.topicId
       ..title = _model.title
-      ..tags = _model.tags;
+      ..tags = _model.tags
+      ..emotionIds = _model.emotionIds;
     notifyListeners();
   }
 
