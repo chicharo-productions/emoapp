@@ -8,10 +8,13 @@ import 'package:emoapp/model/journal_type.dart';
 import 'package:emoapp/model/topic.dart';
 import 'package:emoapp/model/emotion.dart';
 import 'package:emoapp/model/default_emotions.dart';
+import 'package:emoapp/model/idea.dart';
+import 'package:emoapp/model/visibility_group.dart';
 import 'package:emoapp/services/journal_entry_extended_service.dart';
 import 'package:emoapp/services/sdb.dart';
 import 'package:emoapp/services/flat_file_service.dart';
 import 'package:emoapp/services/emotion_service.dart';
+import 'package:emoapp/services/idea_service.dart';
 import 'package:get_it/get_it.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -60,6 +63,8 @@ class ServiceLocatorRegistrar {
     await registerDiscussion();
     await registerTopic();
     await registerEmotion();
+    await registerIdea();
+    await registerVisibilityGroup();
   }
 
   /// used for registering entity instantiation with or without parameters
@@ -336,4 +341,68 @@ class ServiceLocatorRegistrar {
   //   // GetIt.instance.registerSingleton<JournalEntryExtendedService>(
   //   // JournalEntryExtendedService());
   // }
+
+  Future<void> registerVisibilityGroup() async {
+    (bool, Exception?) visibilityGroupValidation(VisibilityGroup vg) =>
+        vg.name.isNotEmpty
+            ? (true, null)
+            : (false, Exception('visibility group name is not there'));
+
+    registerEntityInvocatorWithParams<VisibilityGroup, (String name, String description)>(
+      ((String name, String description) params) => VisibilityGroup(
+        id: const Uuid().v4(),
+        name: params.$1,
+        description: params.$2,
+      ),
+      'visibility-group-box',
+    );
+
+    final visibilityGroup =
+        GetIt.instance.registerSingleton<FlatFileEntityService<VisibilityGroup>>(
+      FlatFileEntityService<VisibilityGroup>(
+          visibilityGroupValidation, Sdb<VisibilityGroup>()),
+    );
+
+    GetIt.instance
+        .registerFactoryParam<VisibilityGroup, Map<String, dynamic>, void>(
+            (json, _) => VisibilityGroup.fromJson(json),
+            instanceName: "${VisibilityGroup}Json");
+
+    // Create default "Personal" visibility group if none exist
+    final existingGroups = await visibilityGroup.where((vg) => true);
+    if (existingGroups.isEmpty) {
+      final personalGroup = VisibilityGroup(
+        id: const Uuid().v4(),
+        name: 'Personal',
+        description: 'Personal visibility group for private ideas',
+      );
+      await visibilityGroup.create(personalGroup, visibilityGroupValidation);
+    }
+  }
+
+  Future<void> registerIdea() async {
+    (bool, Exception?) ideaValidation(Idea i) => i.title.isNotEmpty
+        ? (true, null)
+        : (false, Exception('idea title is not there'));
+
+    registerEntityInvocatorWithParams<Idea,
+        (String title, String content, double x, double y)>(
+      ((String title, String content, double x, double y) params) => Idea.create(
+        title: params.$1,
+        content: params.$2,
+        positionX: params.$3,
+        positionY: params.$4,
+      ),
+      'idea-box',
+    );
+
+    final idea = GetIt.instance.registerSingleton<IdeaService>(
+      IdeaService(ideaValidation, Sdb<Idea>()),
+    );
+
+    GetIt.instance.registerFactoryParam<Idea, Map<String, dynamic>, void>(
+        (json, _) => Idea.fromJson(json),
+        instanceName: "${Idea}Json");
+  }
 }
+
