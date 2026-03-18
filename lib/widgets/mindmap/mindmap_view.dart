@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'package:emoapp/view_model/mindmap_view_model.dart';
 import 'package:emoapp/widgets/mindmap/idea_node_widget.dart';
 import 'package:flutter/material.dart';
